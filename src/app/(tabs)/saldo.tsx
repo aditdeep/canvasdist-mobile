@@ -30,9 +30,12 @@ export default function SaldoScreen() {
       const res = await api.post<{ payment_url: string | null }>("/wallet/topup", {
         amount,
         payment_method: "BC",
+        return_url: "canvasdist://payment-return",
       });
       if (res.payment_url) {
-        await WebBrowser.openBrowserAsync(res.payment_url);
+        // openAuthSessionAsync otomatis nutup browser & balik ke app begitu
+        // Duitku redirect ke return_url (deep link) setelah pembayaran selesai.
+        await WebBrowser.openAuthSessionAsync(res.payment_url, "canvasdist://payment-return");
         mutateWallet();
       }
     } catch (err) {
