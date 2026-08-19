@@ -8,6 +8,8 @@ export type User = {
   role: Role;
   parent_id: number | null;
   is_active: boolean;
+  avatar_path: string | null;
+  push_token: string | null;
 };
 
 export type Wallet = {
@@ -114,6 +116,17 @@ export type Buyback = {
   cashback_amount: string;
   status: "pending" | "verified" | "rejected";
   outlet?: Outlet;
+};
+
+export type Withdrawal = {
+  id: number;
+  amount: string;
+  bank_name: string;
+  account_number: string;
+  account_holder_name: string;
+  status: "pending" | "approved" | "rejected";
+  rejection_reason: string | null;
+  created_at: string;
 };
 
 export type Paginated<T> = {

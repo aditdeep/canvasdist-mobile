@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { router } from "expo-router";
 import { api, ApiError, getToken, setToken } from "./api";
+import { registerForPushNotifications } from "./notifications";
 import type { User } from "../types";
 
 type AuthContextValue = {
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const me = await api.get<User>("/auth/me");
       setUser(me);
+      registerForPushNotifications();
     } catch {
       await setToken(null);
     } finally {
@@ -41,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const res = await api.post<{ user: User; token: string }>("/auth/login", { email, password });
     await setToken(res.token);
     setUser(res.user);
+    registerForPushNotifications();
     router.replace("/(tabs)");
   }
 

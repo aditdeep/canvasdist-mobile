@@ -2,10 +2,11 @@ import { Redirect, Tabs } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 import { Home, ClipboardList, Wallet2, User as UserIcon } from "lucide-react-native";
 import { useAuth } from "../../lib/auth-context";
-import { colors } from "../../lib/theme";
+import { useAppTheme } from "../../lib/theme-context";
 
 export default function TabsLayout() {
   const { user, loading } = useAuth();
+  const { colors } = useAppTheme();
 
   if (loading) {
     return (
@@ -28,7 +29,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: colors.primary1,
         tabBarInactiveTintColor: colors.inkFaint,
         tabBarStyle: {
-          backgroundColor: "rgba(255,255,255,0.97)",
+          backgroundColor: colors.tabBarBg,
           borderTopColor: colors.glassBorder,
           height: 62,
           paddingTop: 6,

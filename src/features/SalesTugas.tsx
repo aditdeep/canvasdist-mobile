@@ -1,13 +1,17 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import useSWR from "swr";
 import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
 import {
   ActivityIndicator,
   FlatList,
   Image,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -17,10 +21,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Camera, MapPin, Navigation, X } from "lucide-react-native";
 import { Card, GradientButton, GhostButton } from "../components/ui";
 import { api, fetcher, formatDateTime, ApiError } from "../lib/api";
-import { colors, radius, spacing } from "../lib/theme";
+import { compressPhoto } from "../lib/image";
+import { useAppTheme } from "../lib/theme-context";
+import { radius, spacing, type ThemeColors } from "../lib/theme";
 import type { Outlet, Paginated, Visit } from "../types";
 
 export default function SalesTugas() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+  const modalStyles = useMemo(() => createModalStyles(colors), [colors]);
   const { data: visits, isLoading, mutate } = useSWR<Paginated<Visit>>("/visits", fetcher);
   const { data: outlets } = useSWR<Paginated<Outlet>>("/outlets", fetcher);
   const [open, setOpen] = useState(false);
@@ -92,6 +101,8 @@ function CheckinModal({
   outlets: Outlet[];
   onSaved: () => void;
 }) {
+  const { colors } = useAppTheme();
+  const modalStyles = useMemo(() => createModalStyles(colors), [colors]);
   const [outletId, setOutletId] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -133,20 +144,26 @@ function CheckinModal({
         notes,
       };
 
-      await api.postForm(
-        "/visits/checkin",
-        fields,
-        photoUri
-          ? { uri: photoUri, name: "checkin.jpg", type: "image/jpeg", fieldName: "photo" }
-          : undefined
-      );
+      let file: { uri: string; name: string; type: string; fieldName: string } | undefined;
+      if (photoUri) {
+        const compressed = await compressPhoto(photoUri);
+        file = { ...compressed, fieldName: "photo" };
+      }
+
+      await api.postForm("/visits/checkin", fields, file);
 
       setOutletId(null);
       setNotes("");
       setPhotoUri(null);
       onSaved();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Gagal checkin. Coba lagi.");
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else if (err instanceof Error) {
+        setError(`Gagal checkin: ${err.message}`);
+      } else {
+        setError("Gagal checkin. Periksa koneksi internet kamu dan coba lagi.");
+      }
     } finally {
       setSaving(false);
     }
@@ -154,8 +171,12 @@ function CheckinModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={modalStyles.backdrop}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={modalStyles.backdrop}
+      >
         <View style={modalStyles.sheet}>
+          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <View style={modalStyles.sheetHeader}>
             <Text style={modalStyles.sheetTitle}>Checkin Kunjungan</Text>
             <Pressable onPress={onClose}>
@@ -216,51 +237,56 @@ function CheckinModal({
           <GradientButton onPress={handleCheckin} loading={saving} disabled={!outletId}>
             Checkin Sekarang
           </GradientButton>
+          </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
-const styles = StyleSheet.create({
-  header: { padding: spacing.lg, paddingBottom: 0 },
-  title: { fontSize: 20, fontWeight: "800", color: colors.ink },
-  subtitle: { fontSize: 13, color: colors.inkSoft, marginTop: 2 },
-  gradBtnLabel: { color: "#fff", fontWeight: "700", fontSize: 14 },
-  visitOutlet: { fontSize: 14, fontWeight: "700", color: colors.ink },
-  visitTime: { fontSize: 11, color: colors.inkSoft, marginTop: 2 },
-  visitNotes: { fontSize: 12, color: colors.inkSoft, marginTop: 4 },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    header: { padding: spacing.lg, paddingBottom: 0 },
+    title: { fontSize: 20, fontWeight: "800", color: colors.ink },
+    subtitle: { fontSize: 13, color: colors.inkSoft, marginTop: 2 },
+    gradBtnLabel: { color: "#fff", fontWeight: "700", fontSize: 14 },
+    visitOutlet: { fontSize: 14, fontWeight: "700", color: colors.ink },
+    visitTime: { fontSize: 11, color: colors.inkSoft, marginTop: 2 },
+    visitNotes: { fontSize: 12, color: colors.inkSoft, marginTop: 4 },
+  });
+}
 
-const modalStyles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)", justifyContent: "flex-end" },
-  sheet: { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: spacing.lg, maxHeight: "85%" },
-  sheetHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md },
-  sheetTitle: { fontSize: 16, fontWeight: "700", color: colors.ink },
-  label: { fontSize: 12, fontWeight: "600", color: colors.inkSoft, marginBottom: 6, marginTop: spacing.sm },
-  outletRow: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: radius.sm, marginBottom: 4 },
-  outletRowActive: { backgroundColor: colors.primary1 + "18" },
-  outletText: { fontSize: 13, color: colors.ink },
-  outletTextActive: { fontSize: 13, color: colors.primary1, fontWeight: "700" },
-  textArea: {
-    backgroundColor: "rgba(0,0,0,0.03)",
-    borderWidth: 1,
-    borderColor: colors.glassBorder,
-    borderRadius: radius.sm,
-    padding: 12,
-    fontSize: 13,
-    minHeight: 70,
-    textAlignVertical: "top",
-    color: colors.ink,
-  },
-  photoPreview: { width: "100%", height: 140, borderRadius: radius.sm },
-  removePhoto: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    borderRadius: 999,
-    padding: 6,
-  },
-  errorBox: { backgroundColor: colors.danger + "18", borderRadius: radius.sm, padding: 10, marginBottom: spacing.sm },
-});
+function createModalStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)", justifyContent: "flex-end" },
+    sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: spacing.lg, maxHeight: "85%" },
+    sheetHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md },
+    sheetTitle: { fontSize: 16, fontWeight: "700", color: colors.ink },
+    label: { fontSize: 12, fontWeight: "600", color: colors.inkSoft, marginBottom: 6, marginTop: spacing.sm },
+    outletRow: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: radius.sm, marginBottom: 4 },
+    outletRowActive: { backgroundColor: colors.primary1 + "18" },
+    outletText: { fontSize: 13, color: colors.ink },
+    outletTextActive: { fontSize: 13, color: colors.primary1, fontWeight: "700" },
+    textArea: {
+      backgroundColor: colors.inputBg,
+      borderWidth: 1,
+      borderColor: colors.glassBorder,
+      borderRadius: radius.sm,
+      padding: 12,
+      fontSize: 13,
+      minHeight: 70,
+      textAlignVertical: "top",
+      color: colors.ink,
+    },
+    photoPreview: { width: "100%", height: 140, borderRadius: radius.sm },
+    removePhoto: {
+      position: "absolute",
+      top: 8,
+      right: 8,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      borderRadius: 999,
+      padding: 6,
+    },
+    errorBox: { backgroundColor: colors.danger + "18", borderRadius: radius.sm, padding: 10, marginBottom: spacing.sm },
+  });
+}
