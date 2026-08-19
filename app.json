@@ -64,10 +64,11 @@
       "typedRoutes": true,
       "reactCompiler": true
     },
-    "extra": {
-  "apiUrl": "https://api.canvasdist.my.id/api",
-  "eas": {
-    "projectId": "8fda9e72-1e10-48d8-b5b6-0efd850eb634"
+        "extra": {
+      "apiUrl": "https://api.canvasdist.my.id/api",
+      "eas": {
+        "projectId": "8fda9e72-1e10-48d8-b5b6-0efd850eb634"
+      }
+    }
   }
-}
 }
