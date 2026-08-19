@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
-import { Image, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronRight, FileText, LogOut, Mail, Moon, Pencil, Phone, Shield, ShieldCheck, Sun } from "lucide-react-native";
 import { Card, GhostButton, Badge } from "../../components/ui";
@@ -28,7 +28,7 @@ export default function ProfilScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={["top"]}>
-      <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Profil</Text>
 
         <Card style={{ alignItems: "center", paddingVertical: spacing.xl, marginTop: spacing.lg }}>
@@ -107,7 +107,9 @@ export default function ProfilScreen() {
           <LogOut size={16} color={colors.danger} />
           <Text style={{ color: colors.danger, fontWeight: "700", fontSize: 13 }}>Keluar</Text>
         </GhostButton>
-      </View>
+
+        <View style={{ height: spacing.xl }} />
+      </ScrollView>
     </SafeAreaView>
   );
 }

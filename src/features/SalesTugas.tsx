@@ -172,7 +172,7 @@ function CheckinModal({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={modalStyles.backdrop}
       >
         <View style={modalStyles.sheet}>

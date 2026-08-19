@@ -17,6 +17,7 @@
     },
     "android": {
       "package": "com.canvasdist.mobile",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#5b5ff0",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

@@ -1,5 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
+import * as FileSystem from "expo-file-system/legacy";
 
 export const API_BASE_URL: string =
   (Constants.expoConfig?.extra?.apiUrl as string) || "http://localhost:8000/api";
@@ -69,7 +70,12 @@ export const api = {
 
   /**
    * Upload file (multipart/form-data) — foto checkin, POD, buyback.
-   * uri dari expo-image-picker (file://...), fileName & mimeType opsional.
+   *
+   * Dipakai FileSystem.uploadAsync (bukan fetch + FormData biasa) karena
+   * React Native versi terbaru kadang menolak object { uri, name, type }
+   * sebagai bagian FormData dengan error "Unsupported FormDataPart
+   * implementation". uploadAsync dirancang khusus untuk upload file native
+   * dan tidak kena masalah ini.
    */
   postForm: async <T,>(
     path: string,
@@ -77,39 +83,42 @@ export const api = {
     file?: { uri: string; name: string; type: string; fieldName: string }
   ): Promise<T> => {
     const token = await getToken();
-    const formData = new FormData();
+    const headers: Record<string, string> = {
+      Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
 
-    Object.entries(fields).forEach(([key, value]) => formData.append(key, value));
+    let res: { status: number; body: string };
 
     if (file) {
-      // React Native FormData menerima object { uri, name, type } sebagai representasi file
-      formData.append(file.fieldName, {
-        uri: file.uri,
-        name: file.name,
-        type: file.type,
-      } as unknown as Blob);
+      const result = await FileSystem.uploadAsync(`${API_BASE_URL}${path}`, file.uri, {
+        httpMethod: "POST",
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        fieldName: file.fieldName,
+        mimeType: file.type,
+        parameters: fields,
+        headers,
+      });
+      res = { status: result.status, body: result.body };
+    } else {
+      // Tidak ada file — kirim sebagai form biasa (masih multipart supaya
+      // backend Laravel konsisten menerima lewat $request->all() / postForm)
+      const formData = new FormData();
+      Object.entries(fields).forEach(([key, value]) => formData.append(key, value));
+      const fetchRes = await fetch(`${API_BASE_URL}${path}`, { method: "POST", headers, body: formData });
+      res = { status: fetchRes.status, body: await fetchRes.text() };
     }
 
-    const res = await fetch(`${API_BASE_URL}${path}`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: formData,
-    });
-
-    const text = await res.text();
     let body: unknown = null;
-    if (text) {
+    if (res.body) {
       try {
-        body = JSON.parse(text);
+        body = JSON.parse(res.body);
       } catch {
-        body = text;
+        body = res.body;
       }
     }
 
-    if (!res.ok) {
+    if (res.status < 200 || res.status >= 300) {
       const b = (body ?? {}) as { message?: string; errors?: Record<string, string[]> };
       throw new ApiError(b.message || `Terjadi kesalahan (${res.status})`, res.status, b.errors);
     }
