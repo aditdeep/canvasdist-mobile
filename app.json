@@ -24,7 +24,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "CAMERA"]
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "CAMERA", "POST_NOTIFICATIONS"]
     },
     "web": {
       "output": "static",
@@ -50,6 +50,13 @@
         "expo-image-picker",
         {
           "cameraPermission": "CanvasDist butuh akses kamera untuk foto checkin, bukti terima (POD), dan barang bekas."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#5b5ff0"
         }
       ]
     ],

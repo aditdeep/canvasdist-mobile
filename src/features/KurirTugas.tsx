@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import useSWR from "swr";
 import * as Location from "expo-location";
 import * as ImagePicker from "expo-image-picker";
-import { ActivityIndicator, FlatList, Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Image, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Camera, Check, Navigation, Truck, X } from "lucide-react-native";
 import { Card, GradientButton, GhostButton, Badge } from "../components/ui";
 import { api, fetcher, ApiError } from "../lib/api";
+import { compressPhoto } from "../lib/image";
 import { useAuth } from "../lib/auth-context";
-import { colors, radius, spacing } from "../lib/theme";
+import { useAppTheme } from "../lib/theme-context";
+import { radius, spacing, type ThemeColors } from "../lib/theme";
 import type { DeliveryOrder, Paginated } from "../types";
 
 const STATUS_LABEL: Record<DeliveryOrder["status"], string> = {
@@ -29,6 +31,8 @@ const STATUS_TONE: Record<DeliveryOrder["status"], "primary" | "success" | "warn
 
 export default function KurirTugas() {
   const { user } = useAuth();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data, isLoading, mutate } = useSWR<Paginated<DeliveryOrder>>("/delivery-orders", fetcher);
   const [podTarget, setPodTarget] = useState<DeliveryOrder | null>(null);
   const [trackingId, setTrackingId] = useState<number | null>(null);
@@ -193,6 +197,8 @@ function PodModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const { colors } = useAppTheme();
+  const modalStyles = useMemo(() => createModalStyles(colors), [colors]);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -227,17 +233,19 @@ function PodModal({
         // lokasi opsional untuk POD, lanjut tanpa itu kalau gagal
       }
 
-      await api.postForm(`/delivery-orders/${target.id}/pod`, fields, {
-        uri: photoUri,
-        name: "pod.jpg",
-        type: "image/jpeg",
-        fieldName: "photo",
-      });
+      const compressed = await compressPhoto(photoUri);
+      await api.postForm(`/delivery-orders/${target.id}/pod`, fields, { ...compressed, fieldName: "photo" });
 
       setPhotoUri(null);
       onSaved();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Gagal upload bukti terima.");
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else if (err instanceof Error) {
+        setError(`Gagal upload: ${err.message}`);
+      } else {
+        setError("Gagal upload bukti terima. Periksa koneksi internet kamu.");
+      }
     } finally {
       setSaving(false);
     }
@@ -287,24 +295,28 @@ function PodModal({
   );
 }
 
-const styles = StyleSheet.create({
-  header: { padding: spacing.lg, paddingBottom: spacing.sm },
-  title: { fontSize: 20, fontWeight: "800", color: colors.ink },
-  subtitle: { fontSize: 13, color: colors.inkSoft, marginTop: 2 },
-  doNumber: { fontSize: 11, color: colors.inkSoft, fontFamily: "monospace" },
-  outletName: { fontSize: 14, fontWeight: "700", color: colors.ink, marginTop: 2 },
-  outletAddress: { fontSize: 12, color: colors.inkSoft, marginTop: 1 },
-  legInfo: { fontSize: 11, color: colors.primary1, marginTop: 4 },
-  btnLabel: { color: "#fff", fontWeight: "700", fontSize: 12 },
-  ghostLabel: { color: colors.ink, fontWeight: "600", fontSize: 12 },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    header: { padding: spacing.lg, paddingBottom: spacing.sm },
+    title: { fontSize: 20, fontWeight: "800", color: colors.ink },
+    subtitle: { fontSize: 13, color: colors.inkSoft, marginTop: 2 },
+    doNumber: { fontSize: 11, color: colors.inkSoft, fontFamily: "monospace" },
+    outletName: { fontSize: 14, fontWeight: "700", color: colors.ink, marginTop: 2 },
+    outletAddress: { fontSize: 12, color: colors.inkSoft, marginTop: 1 },
+    legInfo: { fontSize: 11, color: colors.primary1, marginTop: 4 },
+    btnLabel: { color: "#fff", fontWeight: "700", fontSize: 12 },
+    ghostLabel: { color: colors.ink, fontWeight: "600", fontSize: 12 },
+  });
+}
 
-const modalStyles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)", justifyContent: "flex-end" },
-  sheet: { backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: spacing.lg },
-  sheetHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md },
-  sheetTitle: { fontSize: 16, fontWeight: "700", color: colors.ink },
-  photoPreview: { width: "100%", height: 160, borderRadius: radius.sm },
-  removePhoto: { position: "absolute", top: 8, right: 8, backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 999, padding: 6 },
-  errorBox: { backgroundColor: colors.danger + "18", borderRadius: radius.sm, padding: 10, marginBottom: spacing.sm },
-});
+function createModalStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)", justifyContent: "flex-end" },
+    sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: spacing.lg },
+    sheetHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md },
+    sheetTitle: { fontSize: 16, fontWeight: "700", color: colors.ink },
+    photoPreview: { width: "100%", height: 160, borderRadius: radius.sm },
+    removePhoto: { position: "absolute", top: 8, right: 8, backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 999, padding: 6 },
+    errorBox: { backgroundColor: colors.danger + "18", borderRadius: radius.sm, padding: 10, marginBottom: spacing.sm },
+  });
+}

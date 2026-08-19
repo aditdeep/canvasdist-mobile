@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -11,10 +11,13 @@ import {
 import { Card, GradientButton } from "../components/ui";
 import { MemberCard } from "../components/MemberCard";
 import { useAuth, ApiError } from "../lib/auth-context";
-import { colors, radius, spacing } from "../lib/theme";
+import { useAppTheme } from "../lib/theme-context";
+import { radius, spacing, type ThemeColors } from "../lib/theme";
 
 export default function LoginScreen() {
   const { login } = useAuth();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -87,73 +90,35 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    padding: spacing.lg,
-    justifyContent: "center",
-  },
-  logoBox: {
-    alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  logoBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
-    backgroundColor: colors.primary1,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing.sm,
-  },
-  logoText: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "800",
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: colors.ink,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: colors.inkSoft,
-    textAlign: "center",
-    marginTop: 4,
-    maxWidth: 260,
-  },
-  formTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: colors.ink,
-    marginBottom: spacing.md,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.inkSoft,
-    marginBottom: 6,
-    marginTop: spacing.sm,
-  },
-  input: {
-    backgroundColor: "rgba(255,255,255,0.6)",
-    borderWidth: 1,
-    borderColor: colors.glassBorder,
-    borderRadius: radius.sm,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: colors.ink,
-  },
-  errorBox: {
-    backgroundColor: colors.danger + "18",
-    borderRadius: radius.sm,
-    padding: 10,
-    marginBottom: spacing.sm,
-  },
-  errorText: {
-    color: colors.danger,
-    fontSize: 12,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flexGrow: 1, padding: spacing.lg, justifyContent: "center" },
+    logoBox: { alignItems: "center", marginBottom: spacing.lg },
+    logoBadge: {
+      width: 52,
+      height: 52,
+      borderRadius: 16,
+      backgroundColor: colors.primary1,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: spacing.sm,
+    },
+    logoText: { color: "#fff", fontSize: 22, fontWeight: "800" },
+    title: { fontSize: 22, fontWeight: "800", color: colors.ink },
+    subtitle: { fontSize: 13, color: colors.inkSoft, textAlign: "center", marginTop: 4, maxWidth: 260 },
+    formTitle: { fontSize: 17, fontWeight: "700", color: colors.ink, marginBottom: spacing.md },
+    label: { fontSize: 12, fontWeight: "600", color: colors.inkSoft, marginBottom: 6, marginTop: spacing.sm },
+    input: {
+      backgroundColor: colors.inputBg,
+      borderWidth: 1,
+      borderColor: colors.glassBorder,
+      borderRadius: radius.sm,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      fontSize: 14,
+      color: colors.ink,
+    },
+    errorBox: { backgroundColor: colors.danger + "18", borderRadius: radius.sm, padding: 10, marginBottom: spacing.sm },
+    errorText: { color: colors.danger, fontSize: 12 },
+  });
+}

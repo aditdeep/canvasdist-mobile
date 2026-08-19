@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import useSWR from "swr";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -5,11 +6,14 @@ import { Card } from "../../components/ui";
 import { MemberCard } from "../../components/MemberCard";
 import { fetcher, formatCurrency } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
-import { colors, spacing } from "../../lib/theme";
+import { useAppTheme } from "../../lib/theme-context";
+import { spacing, type ThemeColors } from "../../lib/theme";
 import type { Wallet, MemberCard as MemberCardType, Paginated, Order, Visit } from "../../types";
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data: wallet } = useSWR<Wallet>("/wallet", fetcher);
   const { data: card } = useSWR<MemberCardType>("/member-card", fetcher);
   const { data: orders } = useSWR<Paginated<Order>>("/orders", fetcher);
@@ -61,13 +65,15 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: spacing.lg },
-  greeting: { fontSize: 20, fontWeight: "800", color: colors.ink },
-  subtitle: { fontSize: 13, color: colors.inkSoft, marginTop: 2, marginBottom: spacing.lg },
-  statRow: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.md },
-  statCard: { flex: 1 },
-  statLabel: { fontSize: 11, color: colors.inkSoft, fontWeight: "600", marginBottom: 6 },
-  statValue: { fontSize: 18, fontWeight: "800", color: colors.ink },
-  sectionTitle: { fontSize: 14, fontWeight: "700", color: colors.ink, marginBottom: spacing.sm, marginTop: spacing.sm },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { padding: spacing.lg },
+    greeting: { fontSize: 20, fontWeight: "800", color: colors.ink },
+    subtitle: { fontSize: 13, color: colors.inkSoft, marginTop: 2, marginBottom: spacing.lg },
+    statRow: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.md },
+    statCard: { flex: 1 },
+    statLabel: { fontSize: 11, color: colors.inkSoft, fontWeight: "600", marginBottom: 6 },
+    statValue: { fontSize: 18, fontWeight: "800", color: colors.ink },
+    sectionTitle: { fontSize: 14, fontWeight: "700", color: colors.ink, marginBottom: spacing.sm, marginTop: spacing.sm },
+  });
+}

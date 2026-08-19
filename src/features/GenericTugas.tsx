@@ -1,9 +1,11 @@
+import { useMemo } from "react";
 import useSWR from "swr";
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Card, Badge } from "../components/ui";
 import { fetcher, formatCurrency, formatDateTime } from "../lib/api";
-import { colors, spacing } from "../lib/theme";
+import { useAppTheme } from "../lib/theme-context";
+import { spacing, type ThemeColors } from "../lib/theme";
 import type { Order, Paginated } from "../types";
 
 const STATUS_TONE: Record<Order["status"], "primary" | "success" | "warning" | "danger" | "neutral"> = {
@@ -17,6 +19,8 @@ const STATUS_TONE: Record<Order["status"], "primary" | "success" | "warning" | "
 };
 
 export function GenericTugas() {
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { data, isLoading } = useSWR<Paginated<Order>>("/orders", fetcher);
 
   return (
@@ -59,12 +63,14 @@ export function GenericTugas() {
   );
 }
 
-const styles = StyleSheet.create({
-  header: { padding: spacing.lg, paddingBottom: spacing.sm },
-  title: { fontSize: 20, fontWeight: "800", color: colors.ink },
-  subtitle: { fontSize: 13, color: colors.inkSoft, marginTop: 2 },
-  orderNo: { fontSize: 11, color: colors.inkSoft, fontFamily: "monospace" },
-  outletName: { fontSize: 14, fontWeight: "700", color: colors.ink, marginTop: 2 },
-  date: { fontSize: 11, color: colors.inkSoft, marginTop: 2 },
-  total: { fontSize: 13, fontWeight: "700", color: colors.ink },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    header: { padding: spacing.lg, paddingBottom: spacing.sm },
+    title: { fontSize: 20, fontWeight: "800", color: colors.ink },
+    subtitle: { fontSize: 13, color: colors.inkSoft, marginTop: 2 },
+    orderNo: { fontSize: 11, color: colors.inkSoft, fontFamily: "monospace" },
+    outletName: { fontSize: 14, fontWeight: "700", color: colors.ink, marginTop: 2 },
+    date: { fontSize: 11, color: colors.inkSoft, marginTop: 2 },
+    total: { fontSize: 13, fontWeight: "700", color: colors.ink },
+  });
+}
