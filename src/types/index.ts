@@ -10,6 +10,8 @@ export type User = {
   is_active: boolean;
   avatar_path: string | null;
   push_token: string | null;
+  address: string | null;
+  outlet?: { id: number; address: string | null; name: string } | null;
 };
 
 export type Wallet = {

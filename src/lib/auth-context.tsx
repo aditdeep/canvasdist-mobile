@@ -10,6 +10,9 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  /** Set sesi langsung dari data yang sudah didapat (mis. setelah registrasi),
+   * tanpa round-trip API tambahan ke /auth/me. */
+  setSession: (user: User, token: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -58,8 +61,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.replace("/login");
   }
 
+  async function setSession(newUser: User, token: string) {
+    await setToken(token);
+    setUser(newUser);
+    registerForPushNotifications();
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser: loadUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser: loadUser, setSession }}>
       {children}
     </AuthContext.Provider>
   );

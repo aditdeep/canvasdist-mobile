@@ -54,6 +54,13 @@ export default function StoreTabsLayout() {
         name="akun"
         options={{ title: "Akun", tabBarIcon: ({ color, size }) => <UserIcon color={color} size={size} /> }}
       />
+      {/* Screen ini ada di dalam grup (store) supaya bisa dinavigasi, tapi
+          sengaja disembunyikan dari tab bar (href: null) — kalau tidak,
+          Expo Router otomatis menambahkannya jadi tab tambahan dengan ikon
+          default yang rusak/nggak ada label jelas. */}
+      <Tabs.Screen name="checkout" options={{ href: null }} />
+      <Tabs.Screen name="produk/[id]" options={{ href: null }} />
+      <Tabs.Screen name="notifikasi" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -3,17 +3,18 @@ import { router } from "expo-router";
 import useSWR from "swr";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Card, GradientButton } from "../components/ui";
-import { api, fetcher, ApiError, setToken } from "../lib/api";
+import { api, fetcher, ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 import { useAppTheme } from "../lib/theme-context";
 import { radius, spacing, type ThemeColors } from "../lib/theme";
+import type { User } from "../types";
 
 type Region = { id: number; name: string; code: string };
 
 export default function DaftarScreen() {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { refreshUser } = useAuth();
+  const { setSession } = useAuth();
   const { data: regions } = useSWR<Region[]>("/public/regions", fetcher);
 
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", region_code: "", address: "" });
@@ -24,9 +25,8 @@ export default function DaftarScreen() {
     setError(null);
     setLoading(true);
     try {
-      const res = await api.post<{ token: string }>("/public/register", form);
-      await setToken(res.token);
-      await refreshUser();
+      const res = await api.post<{ user: User; token: string }>("/public/register", form);
+      await setSession(res.user, res.token);
       router.replace("/(store)" as never);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Gagal mendaftar, coba lagi.");
