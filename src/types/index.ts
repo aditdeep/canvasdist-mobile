@@ -74,9 +74,15 @@ export type Order = {
   order_no: string;
   outlet_id: number;
   status: OrderStatus;
+  fulfillment_type: "delivery" | "pickup";
+  payment_status: "unpaid" | "paid";
+  payment_method: "cash" | "saldo" | "duitku";
   total: string;
   created_at: string;
   outlet?: Outlet;
+  items?: { id: number; product_id: number; qty: number; subtotal: string; product?: { name: string } }[];
+  delivery_order?: { id: number; do_number: string } | null;
+  payment_transactions?: { id: number; reference: string; status: string }[];
 };
 
 export type Hub = {

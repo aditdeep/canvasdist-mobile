@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { router } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Truck, Store, CheckCircle2 } from "lucide-react-native";
-import { Card, GradientButton, Badge } from "../../components/ui";
+import { Truck, Store, CheckCircle2, Wallet, Banknote } from "lucide-react-native";
+import { Card, GradientButton } from "../../components/ui";
 import { api, formatCurrency, ApiError } from "../../lib/api";
 import { useCart } from "../../lib/cart-context";
 import { useAppTheme } from "../../lib/theme-context";
@@ -14,6 +15,7 @@ export default function CheckoutScreen() {
   const { colors } = useAppTheme();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const [fulfillment, setFulfillment] = useState<"delivery" | "pickup">("delivery");
+  const [payNow, setPayNow] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successOrderNo, setSuccessOrderNo] = useState<string | null>(null);
@@ -22,13 +24,27 @@ export default function CheckoutScreen() {
     setSaving(true);
     setError(null);
     try {
-      const order = await api.post<{ order_no: string }>("/orders", {
+      const order = await api.post<{ id: number; order_no: string }>("/orders", {
         fulfillment_type: fulfillment,
-        payment_method: "cash",
+        payment_method: payNow ? "duitku" : "cash",
         items: items.map((i) => ({ product_id: i.product.id, qty: i.qty })),
       });
+
+      if (payNow) {
+        const res = await api.post<{ payment_url: string | null }>("/payment/duitku/create", {
+          order_id: order.id,
+          payment_method: "BC",
+          return_url: "canvasdist://payment-return",
+        });
+        clear();
+        if (res.payment_url) {
+          await WebBrowser.openAuthSessionAsync(res.payment_url, "canvasdist://payment-return");
+        }
+      } else {
+        clear();
+      }
+
       setSuccessOrderNo(order.order_no);
-      clear();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Gagal membuat pesanan, coba lagi.");
     } finally {
@@ -73,7 +89,7 @@ export default function CheckoutScreen() {
                 {product.name} <Text style={{ color: colors.inkFaint }}>x{qty}</Text>
               </Text>
               <Text style={styles.summaryPrice}>
-                {formatCurrency(Number(product.display_price ?? product.base_price) * qty)}
+                {formatCurrency(Number(product.discounted_price ?? product.display_price ?? product.base_price) * qty)}
               </Text>
             </View>
           ))}
@@ -106,18 +122,30 @@ export default function CheckoutScreen() {
         </Card>
 
         <Card style={{ marginTop: spacing.md }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={styles.sectionTitle}>Metode Pembayaran</Text>
-            <Badge tone="neutral">Bayar di tempat (COD)</Badge>
+          <Text style={styles.sectionTitle}>Metode Pembayaran</Text>
+          <View style={styles.fulfillmentRow}>
+            <Pressable
+              style={[styles.fulfillmentOption, payNow && styles.fulfillmentOptionActive]}
+              onPress={() => setPayNow(true)}
+            >
+              <Wallet size={20} color={colors.primary1} />
+              <Text style={styles.fulfillmentTitle}>Bayar Sekarang</Text>
+              <Text style={styles.fulfillmentDesc}>Transfer / VA via Duitku</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.fulfillmentOption, !payNow && styles.fulfillmentOptionActive]}
+              onPress={() => setPayNow(false)}
+            >
+              <Banknote size={20} color={colors.primary1} />
+              <Text style={styles.fulfillmentTitle}>Bayar di Tempat</Text>
+              <Text style={styles.fulfillmentDesc}>COD saat diterima/diambil</Text>
+            </Pressable>
           </View>
-          <Text style={styles.paymentNote}>
-            Pembayaran online (saldo/transfer) bisa dipilih setelah pesanan dikonfirmasi agen.
-          </Text>
         </Card>
 
         <GradientButton style={{ marginTop: spacing.lg }} onPress={handleSubmit} loading={saving}>
           <Text style={{ color: "#fff", fontWeight: "700", fontSize: 13 }}>
-            Buat Pesanan — {formatCurrency(totalPrice)}
+            {payNow ? "Bayar Sekarang" : "Buat Pesanan"} — {formatCurrency(totalPrice)}
           </Text>
         </GradientButton>
       </ScrollView>

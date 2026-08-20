@@ -64,7 +64,7 @@ export default function KeranjangScreen() {
               <Text style={styles.itemName} numberOfLines={1}>
                 {product.name}
               </Text>
-              <Text style={styles.itemPrice}>{formatCurrency(product.display_price ?? product.base_price)}</Text>
+              <Text style={styles.itemPrice}>{formatCurrency(product.discounted_price ?? product.display_price ?? product.base_price)}</Text>
             </View>
             <View style={styles.qtyControl}>
               <Pressable onPress={() => updateQty(product.id, qty - 1)} style={styles.qtyBtn}>
