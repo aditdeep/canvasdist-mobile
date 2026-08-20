@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
+import { router } from "expo-router";
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -85,6 +87,13 @@ export default function LoginScreen() {
             Masuk
           </GradientButton>
         </Card>
+
+        <Pressable onPress={() => router.replace("/(store)" as never)} style={{ marginTop: spacing.md, alignItems: "center" }}>
+          <Text style={{ fontSize: 12, color: colors.inkSoft }}>Lewati, jelajahi produk dulu →</Text>
+        </Pressable>
+        <Pressable onPress={() => router.push("/daftar" as never)} style={{ marginTop: spacing.sm, alignItems: "center" }}>
+          <Text style={{ fontSize: 12, color: colors.primary1, fontWeight: "700" }}>Belum punya akun? Daftar</Text>
+        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );

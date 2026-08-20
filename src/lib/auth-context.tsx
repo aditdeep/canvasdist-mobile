@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await setToken(res.token);
     setUser(res.user);
     registerForPushNotifications();
-    router.replace("/(tabs)");
+    router.replace(res.user.role === "customer" ? "/(store)" : "/(tabs)");
   }
 
   async function logout() {

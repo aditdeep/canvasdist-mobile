@@ -1,4 +1,4 @@
-export type Role = "super_admin" | "wilayah" | "agen" | "reseller" | "sales" | "gudang" | "kurir";
+export type Role = "super_admin" | "wilayah" | "agen" | "reseller" | "sales" | "gudang" | "kurir" | "customer";
 
 export type User = {
   id: number;
@@ -127,6 +127,47 @@ export type Withdrawal = {
   status: "pending" | "approved" | "rejected";
   rejection_reason: string | null;
   created_at: string;
+};
+
+export type Category = {
+  id: number;
+  name: string;
+  image_path: string | null;
+  sort_order: number;
+  is_active: boolean;
+};
+
+export type Banner = {
+  id: number;
+  title: string;
+  subtitle: string | null;
+  image_path: string | null;
+  link_url: string | null;
+  sort_order: number;
+  is_active: boolean;
+};
+
+export type Region = {
+  id: number;
+  name: string;
+  code: string;
+};
+
+export type StoreProduct = {
+  id: number;
+  name: string;
+  sku: string;
+  category: string | null;
+  category_id: number | null;
+  unit: string;
+  base_price: string;
+  photo_path: string | null;
+  description: string | null;
+  display_price?: string;
+  discounted_price?: string;
+  promo_label?: string | null;
+  shipping_fee?: string | null;
+  is_active: boolean;
 };
 
 export type Paginated<T> = {

@@ -138,3 +138,14 @@ export function formatDateTime(value: string | null | undefined): string {
   if (!value) return "-";
   return new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 }
+
+/**
+ * Bikin URL gambar lengkap dari path relatif backend ("/storage/products/xxx.jpg").
+ * Sama seperti versi web — tidak hardcode domain, ikut API_BASE_URL yang aktif.
+ */
+export function imageUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  const origin = API_BASE_URL.replace(/\/api\/?$/, "");
+  return `${origin}${path}`;
+}

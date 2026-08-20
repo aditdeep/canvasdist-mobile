@@ -20,6 +20,10 @@ export default function TabsLayout() {
     return <Redirect href="/login" />;
   }
 
+  if (user.role === "customer") {
+    return <Redirect href="/(store)" />;
+  }
+
   const tugasLabel = user.role === "kurir" ? "Pengiriman" : "Tugas";
 
   return (

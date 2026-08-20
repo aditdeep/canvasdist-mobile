@@ -15,5 +15,5 @@ export default function RootIndex() {
     );
   }
 
-  return <Redirect href={user ? "/(tabs)" : "/login"} />;
+  return <Redirect href={!user || user.role === "customer" ? "/(store)" : "/(tabs)"} />;
 }
