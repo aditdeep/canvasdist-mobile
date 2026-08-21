@@ -36,8 +36,9 @@ export default function KurirTugas() {
   const { data, isLoading, mutate } = useSWR<Paginated<DeliveryOrder>>("/delivery-orders", fetcher);
   const [podTarget, setPodTarget] = useState<DeliveryOrder | null>(null);
   const [trackingId, setTrackingId] = useState<number | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
-  const rows = (data?.data ?? []).filter((d) => d.status !== "selesai");
+  const rows = (data?.data ?? []).filter((d) => (showHistory ? d.status === "selesai" : d.status !== "selesai"));
 
   function activeLegFor(d: DeliveryOrder) {
     if (!d.legs || d.legs.length === 0) return null;
@@ -87,6 +88,21 @@ export default function KurirTugas() {
         <Text style={styles.subtitle}>Kelola pengiriman yang ditugaskan hari ini.</Text>
       </View>
 
+      <View style={styles.toggleRow}>
+        <Pressable
+          style={[styles.toggleBtn, !showHistory && styles.toggleBtnActive]}
+          onPress={() => setShowHistory(false)}
+        >
+          <Text style={[styles.toggleText, !showHistory && styles.toggleTextActive]}>Aktif</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.toggleBtn, showHistory && styles.toggleBtnActive]}
+          onPress={() => setShowHistory(true)}
+        >
+          <Text style={[styles.toggleText, showHistory && styles.toggleTextActive]}>Riwayat</Text>
+        </Pressable>
+      </View>
+
       {isLoading && <ActivityIndicator style={{ marginTop: 20 }} color={colors.primary1} />}
 
       <FlatList
@@ -96,7 +112,7 @@ export default function KurirTugas() {
         ListEmptyComponent={
           !isLoading ? (
             <Text style={{ textAlign: "center", color: colors.inkSoft, marginTop: 24, fontSize: 13 }}>
-              Tidak ada pengiriman aktif saat ini.
+              {showHistory ? "Belum ada riwayat pengiriman yang selesai." : "Tidak ada pengiriman aktif saat ini."}
             </Text>
           ) : null
         }
@@ -298,6 +314,22 @@ function PodModal({
 function createStyles(colors: ThemeColors) {
   return StyleSheet.create({
     header: { padding: spacing.lg, paddingBottom: spacing.sm },
+    toggleRow: {
+      flexDirection: "row",
+      gap: spacing.sm,
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.sm,
+    },
+    toggleBtn: {
+      flex: 1,
+      paddingVertical: 9,
+      borderRadius: radius.sm,
+      backgroundColor: colors.inputBg,
+      alignItems: "center",
+    },
+    toggleBtnActive: { backgroundColor: colors.primary1 },
+    toggleText: { fontSize: 12, fontWeight: "700", color: colors.inkSoft },
+    toggleTextActive: { color: "#fff" },
     title: { fontSize: 20, fontWeight: "800", color: colors.ink },
     subtitle: { fontSize: 13, color: colors.inkSoft, marginTop: 2 },
     doNumber: { fontSize: 11, color: colors.inkSoft, fontFamily: "monospace" },
