@@ -39,9 +39,9 @@ export function GenericTugas() {
         renderItem={({ item }) => (
           <Card>
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <View>
+              <View style={{ flex: 1, marginRight: spacing.sm }}>
                 <Text style={styles.orderNo}>{item.order_no}</Text>
-                <Text style={styles.outletName}>{item.outlet?.name ?? "-"}</Text>
+                <Text style={styles.outletName} numberOfLines={1}>{item.outlet?.name ?? "-"}</Text>
                 <Text style={styles.date}>{formatDateTime(item.created_at)}</Text>
               </View>
               <View style={{ alignItems: "flex-end", gap: 6 }}>

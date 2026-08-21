@@ -52,7 +52,7 @@ function OrderCard({ order, colors, styles }: { order: Order; colors: ThemeColor
     <Card>
       <Pressable onPress={() => setExpanded((e) => !e)}>
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-          <View>
+          <View style={{ flex: 1, marginRight: spacing.sm }}>
             <Text style={styles.orderNo}>{order.order_no}</Text>
             <Text style={styles.date}>{formatDateTime(order.created_at)}</Text>
           </View>
